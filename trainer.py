@@ -20,7 +20,7 @@ class trainer:
         self.train_loss = []
         self.train_acc = []
 
-    def train(self , train_dataset ,valid_dataset):
+    def train(self , train_dataset ,valid_dataset , test_dataset):
         for epoch in range(self.epoch):
             running_loss = 0.0
             correct = 0
@@ -34,7 +34,10 @@ class trainer:
             avg_loss_val ,avg_acc_val = self.run_eval_epoch(valid_dataset=valid_dataset, loss_val=loss_val , correct_val=correct_val)
 
             print('[epoch %d] loss: %.5f accuracy: %.4f val loss: %.5f val accuracy: %.4f' % (epoch + 1, avg_loss, avg_acc, avg_loss_val, avg_acc_val))
-
+        
+        avg_loss_test ,avg_acc_test  = self.test_model(test_dataset=test_dataset)
+        print('Loss in the test : {}  , accuracy on test data : {}'.format(avg_loss_test , avg_acc_test) )
+    
     def run_train_epoch(self,train_dataset,running_loss,correct):
         
         for data in train_dataset:
@@ -84,3 +87,26 @@ class trainer:
                 self.val_acc.append(avg_acc_val)
 
         return avg_loss_val ,avg_acc_val        
+
+
+    def test_model(self, test_dataset):
+        self.model.eval()
+        for data in test_dataset:
+            batch, labels = data
+            batch = batch.float()
+            batch, labels = batch.to(self.device), labels.to(self.device)
+
+            outputs = self.model(batch)
+            loss = self.criterion(outputs, labels)
+            _, predicted = torch.max(outputs, 1)
+            
+            correct_test += (predicted == labels).sum().item()
+            loss_test += loss.item()
+            
+            avg_loss_test = loss_test / int(len(test_dataset))
+            avg_acc_test = correct_test / int(len(test_dataset))
+            
+            self.val_loss.append(avg_acc_test)
+            self.val_acc.append(avg_loss_test)
+
+        return avg_loss_test ,avg_acc_test   
